@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    environment:
+      PORT: ${PORT:-8000}
+      VERSION: ${VERSION:-1.0.0}
+      AUTHOR: ${AUTHOR:-m.sveshnikov1}
+    secrets:
+      - api_key
+    restart: unless-stopped
+
+secrets:
+  api_key:
+    environment: API_KEY

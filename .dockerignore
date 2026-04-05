@@ -1,0 +1,8 @@
+.git
+.vscode
+*.md
+tmp/
+Dockerfile
+.dockerignore
+.env
+*.log
