@@ -15,6 +15,11 @@ pipeline {
   }
 
   stages {
+    stage('GitLab Status') {
+      steps {
+        updateGitlabCommitStatus name: 'pipeline', state: 'pending'
+      }
+    }
     stage('Lint') {
       steps {
         echo 'lint'
@@ -45,10 +50,12 @@ pipeline {
         echo 'Pipeline finished!'
     }
     success {
+        updateGitlabCommitStatus name: 'pipeline', state: 'success'
         echo 'All stages passed!'
     }
     failure {
+        updateGitlabCommitStatus name: 'pipeline', state: 'failed'
         echo 'ERROR!'
     }
-}
+  }
 }
