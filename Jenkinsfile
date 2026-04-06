@@ -1,5 +1,3 @@
-/* groovylint-disable-next-line CompileStatic */
-
 pipeline {
   agent { label 'worker' }
 
@@ -7,10 +5,6 @@ pipeline {
     DOCKER_IMAGE = 'm.sveshnikov/weather-app'
     DOCKER_TAG = "${BUILD_NUMBER}"
     DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
-
-    PORT = '8000'
-    VERSION = '1.0.0'
-    AUTHOR = 'm.sveshnikov1'
     API_KEY = credentials('WEATHER_API_KEY')
   }
 
@@ -20,19 +14,29 @@ pipeline {
         updateGitlabCommitStatus name: 'pipeline', state: 'pending'
       }
     }
-    stage('Lint') {
-      steps {
-        echo 'lint'
-      }
-    }
-    stage('Test') {
-      steps {
-        echo 'test'
+    stage('Check') {
+      parallel {
+        stage('Lint') {
+          steps {
+            sh '''
+              docker run --rm -v $PWD:/app -w /app golang:1.21 sh -c "go vet ./..."
+            '''
+          }
+        }
+        stage('Test') {
+          steps {
+            sh '''
+              docker run --rm -e API_KEY=$API_KEY -v $PWD:/app -w /app golang:1.21 \
+              sh -c "go test -v ./..."
+            '''
+          }
+        }
       }
     }
     stage('Build') {
       steps {
-        echo 'build'
+        sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+        sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
       }
     }
     stage('Deploy') {
@@ -40,7 +44,11 @@ pipeline {
         branch 'master'
       }
       steps {
-        echo 'deploy'
+        sh '''
+          echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin
+          docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+          docker push ${DOCKER_IMAGE}:latest
+        '''
       }
     }
   }
