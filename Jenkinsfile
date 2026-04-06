@@ -19,14 +19,14 @@ pipeline {
         stage('Lint') {
           steps {
             sh '''
-              docker run --rm -v $PWD:/app -w /app golang:1.21 sh -c "go vet ./..."
+              docker run --rm -v $PWD:/app -w /app golang:1.22 sh -c "go vet ./..."
             '''
           }
         }
         stage('Test') {
           steps {
             sh '''
-              docker run --rm -e API_KEY=$API_KEY -v $PWD:/app -w /app golang:1.21 \
+              docker run --rm -e API_KEY=$API_KEY -v $PWD:/app -w /app golang:1.22 \
               sh -c "go test -v ./..."
             '''
           }
