@@ -8,9 +8,9 @@ pipeline {
     DOCKER_TAG = "${BUILD_NUMBER}"
     DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
 
-    PORT = 8000
-    VERSION = 1.0.0
-    AUTHOR = m.sveshnikov1
+    PORT = '8000'
+    VERSION = '1.0.0'
+    AUTHOR = 'm.sveshnikov1'
     API_KEY = credentials('WEATHER_API_KEY')
   }
 
