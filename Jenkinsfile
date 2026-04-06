@@ -1,7 +1,7 @@
 /* groovylint-disable-next-line CompileStatic */
 
 pipeline {
-  agent { label 'go-app-agent' }
+  agent { label 'worker' }
 
   environment {
     DOCKER_IMAGE = 'm.sveshnikov/weather-app'
