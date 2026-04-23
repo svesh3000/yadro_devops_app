@@ -1,5 +1,7 @@
+@Library('sharedLib') _
+
 pipeline {
-  agent { label 'worker' }
+  agent none
 
   environment {
     DOCKER_IMAGE = 'm.sveshnikov/weather-app'
@@ -9,47 +11,49 @@ pipeline {
   }
 
   stages {
+    stage('Checkout') {
+      agent { label 'staging' }
+      steps { checkout scm }
+    }
     stage('GitLab Status') {
-      steps {
-        updateGitlabCommitStatus name: 'pipeline', state: 'pending'
-      }
+      agent { label 'staging' }
+      steps { updateGitlabCommitStatus name: 'pipeline', state: 'pending' }
     }
     stage('Check') {
       parallel {
         stage('Lint') {
-          steps {
-            sh '''
-              docker run --rm -v $PWD:/app -w /app golang:1.22 sh -c "go vet ./..."
-            '''
-          }
+          agent { label 'staging' }
+          steps { script { sharedLib.lint() } }
+        }
+        stage('SAST') {
+          agent { label 'staging' }
+          steps { script { sharedLib.sast() } }
         }
         stage('Test') {
-          steps {
-            sh '''
-              docker run --rm -e API_KEY=$API_KEY -v $PWD:/app -w /app golang:1.22 \
-              sh -c "go test -v ./..."
-            '''
-          }
+          agent { label 'staging' }
+          steps { script { sharedLib.test() } }
         }
       }
     }
     stage('Build') {
-      steps {
-        sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-        sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
-      }
+      when { expression { changeRequest() || env.BRANCH_NAME == 'main' || env.TAG_NAME =~ /v.*/} }
+      agent { label 'staging' }
+      steps { script { sharedLib.build() } }
     }
-    stage('Deploy') {
-      when {
-        branch 'master'
-      }
-      steps {
-        sh '''
-          echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin
-          docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-          docker push ${DOCKER_IMAGE}:latest
-        '''
-      }
+    stage('Push') {
+      when { expression {  env.BRANCH_NAME == 'main' || env.TAG_NAME =~ /v.*/ } }
+      agent { label 'staging' }
+      steps { script { sharedLib.push() } }
+    }
+    stage('Deploy Staging') {
+      when { expression { env.BRANCH_NAME == 'main' } }
+      agent { label 'staging' }
+      steps { script { sharedLib.deploy(imageTag: env.DOCKER_TAG, environment: 'staging') } }
+    }
+    stage('Deploy Production') {
+      when { expression { env.TAG_NAME =~ /v.*/ } }
+      agent { label 'production' }
+      steps { script { sharedLib.deploy(imageTag: env.DOCKER_TAG, environment: 'production') } }
     }
   }
 

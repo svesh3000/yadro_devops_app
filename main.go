@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"app/internal/application"
 	"app/internal/config"
@@ -19,5 +20,9 @@ func main() {
 	http.HandleFunc("/info", app.InfoHandler)
 	http.HandleFunc("/info/weather", app.WeatherHandler)
 
-	log.Fatal(http.ListenAndServe(":"+app.Config.Port, nil))
+	server := &http.Server{
+		Addr:        ":" + app.Config.Port,
+		ReadTimeout: 10 * time.Second,
+	}
+	log.Fatal(server.ListenAndServe())
 }
