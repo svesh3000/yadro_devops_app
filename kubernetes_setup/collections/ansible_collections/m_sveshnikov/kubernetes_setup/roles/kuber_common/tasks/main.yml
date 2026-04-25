@@ -1,0 +1,12 @@
+---
+- name: Download key from (yandex mirror)
+  ansible.builtin.get_url:
+    url: "https://mirror.yandex.ru/mirrors/pkgs.k8s.io/core/stable/{{ kubernetes_version }}/deb/Release.key"
+    dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+    mode: '0644'
+
+- name: Add repository (yandex mirror)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://mirror.yandex.ru/mirrors/pkgs.k8s.io/core/stable/{{ kubernetes_version }}/deb /"
+    state: present
+    update_cache: yes

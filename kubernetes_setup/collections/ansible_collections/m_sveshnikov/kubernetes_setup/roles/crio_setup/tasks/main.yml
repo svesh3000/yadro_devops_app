@@ -1,0 +1,22 @@
+---
+- name: Add repository
+  ansible.builtin.deb822_repository:
+    name: cri-o
+    types: [deb]
+    uris: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/deb/"
+    suites: ["/"]
+    signed_by: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/deb/Release.key"
+    state: present
+    enabled: true
+
+- name: Install package
+  ansible.builtin.apt:
+    name: cri-o
+    state: present
+    update_cache: true
+
+- name: Start
+  ansible.builtin.systemd:
+    name: crio
+    state: started
+    enabled: true

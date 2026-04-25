@@ -1,0 +1,12 @@
+---
+- name: Install package
+  ansible.builtin.apt:
+    name: kubelet
+    state: present
+    update_cache: yes
+
+- name: Start
+  ansible.builtin.systemd:
+    name: kubelet
+    state: started
+    enabled: yes
