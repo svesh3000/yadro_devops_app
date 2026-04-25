@@ -1,0 +1,8 @@
+---
+- name: Setup kuber
+  hosts: kuber
+  become: true
+  roles:
+    - m_sveshnikov.kubernetes_setup.crio_setup
+    - m_sveshnikov.kubernetes_setup.kubelet_setup
+    - m_sveshnikov.kubernetes_setup.kubeadm_setup

@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  tasks:
+    - name: "Include kubelet_setup"
+      ansible.builtin.include_role:
+        name: "m_sveshnikov.kubernetes_setup.kubelet_setup"

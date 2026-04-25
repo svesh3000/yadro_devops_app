@@ -1,0 +1,3 @@
+---
+dependencies:
+  - m_sveshnikov.kubernetes_setup.kuber_common
