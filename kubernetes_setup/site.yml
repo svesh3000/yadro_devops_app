@@ -6,3 +6,5 @@
     - m_sveshnikov.kubernetes_setup.crio_setup
     - m_sveshnikov.kubernetes_setup.kubelet_setup
     - m_sveshnikov.kubernetes_setup.kubeadm_setup
+    - role: m_sveshnikov.kubernetes_setup.kubectl_setup
+      when: inventory_hostname == 'master'

@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/playbook.json
+
+---
+- name: Preparing
+  hosts: kuber
+  become: true
+  tasks:
+  - name: Enable IP forwarding
+    ansible.posix.sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes
+
+  - name: Disable swap immediately
+    ansible.builtin.command: swapoff -a
+    when: ansible_swaptotal_mb > 0
+
+  - name: Disable swap permanently
+    ansible.builtin.replace:
+      path: /etc/fstab
+      regexp: '^([^#].*?\sswap\s+.*)$'
+      replace: '#\1'
+    when: ansible_swaptotal_mb > 0
+
+- name: Cluster organization
+  hosts: masters
+  become: true
+  tasks:
+  - name: Initializing
+    ansible.builtin.command:
+      cmd: kubeadm init --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///var/run/crio/crio.sock
+      creates: /etc/kubernetes/admin.conf
+
+  - name: Create .kube directory
+    ansible.builtin.file:
+      path: "/home/{{ ansible_user }}/.kube"
+      state: directory
+      owner: "{{ ansible_user }}"
+      mode: '0755'
+
+  - name: Configuring kubectl
+    ansible.builtin.copy:
+      src: /etc/kubernetes/admin.conf
+      owner: "{{ ansible_user }}"
+      dest: /home/{{ ansible_user }}/.kube/config
+      remote_src: yes
+      mode: '0644'
+
+  - name: Install Calico
+    ansible.builtin.shell: |
+      kubectl apply --server-side -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.5/manifests/operator-crds.yaml
+      kubectl apply --server-side -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.5/manifests/tigera-operator.yaml
+      sleep 15
+      kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.5/manifests/custom-resources.yaml
+    environment:
+      KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+
+  - name: Generate join cmd
+    ansible.builtin.command:
+      cmd: kubeadm token create --print-join-command
+    register: join_cmd
+    run_once: true
+
+- name: Join workers to cluster
+  hosts: kuber
+  become: true
+  tasks:
+  - name: Join
+    ansible.builtin.command:
+      cmd: "{{ hostvars['master']['join_cmd']['stdout'] }} --cri-socket=unix:///var/run/crio/crio.sock"
+      creates: /etc/kubernetes/kubelet.conf
+    when: inventory_hostname != 'master'
