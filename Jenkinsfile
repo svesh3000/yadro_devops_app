@@ -60,6 +60,9 @@ pipeline {
   post {
     always {
         echo 'Pipeline finished!'
+        script {
+            sh 'docker system prune -a -f --volumes'
+        }
     }
     success {
         updateGitlabCommitStatus name: 'pipeline', state: 'success'
