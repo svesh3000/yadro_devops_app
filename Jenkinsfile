@@ -4,7 +4,7 @@ pipeline {
   agent none
 
   environment {
-    DOCKER_IMAGE = 'm.sveshnikov/weather-app'
+    DOCKER_IMAGE = 'sveshnikov/app'
     DOCKER_TAG = "${BUILD_NUMBER}"
     DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
     API_KEY = credentials('WEATHER_API_KEY')
@@ -35,6 +35,14 @@ pipeline {
         }
       }
     }
+    stage('Docker Login') {
+      agent { label 'staging' }
+      steps {
+        script {
+          sh 'echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin'
+        }
+      }
+    }
     stage('Build') {
       when { expression { changeRequest() || env.BRANCH_NAME == 'main' || env.TAG_NAME =~ /v.*/} }
       agent { label 'staging' }
@@ -59,18 +67,19 @@ pipeline {
 
   post {
     always {
-        echo 'Pipeline finished!'
-        script {
-            sh 'docker system prune -a -f --volumes'
-        }
+      echo 'Pipeline finished!'
+      node('staging') {
+          cleanWs()
+          sh 'docker system prune -a -f --volumes || true'
+      }
     }
     success {
-        updateGitlabCommitStatus name: 'pipeline', state: 'success'
-        echo 'All stages passed!'
+      updateGitlabCommitStatus name: 'pipeline', state: 'success'
+      echo 'All stages passed!'
     }
     failure {
-        updateGitlabCommitStatus name: 'pipeline', state: 'failed'
-        echo 'ERROR!'
+      updateGitlabCommitStatus name: 'pipeline', state: 'failed'
+      echo 'ERROR!'
     }
   }
 }
