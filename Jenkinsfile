@@ -44,17 +44,17 @@ pipeline {
       }
     }
     stage('Build') {
-      when { expression { changeRequest() || env.BRANCH_NAME == 'main' || env.TAG_NAME =~ /v.*/} }
+      when { expression { changeRequest() || env.BRANCH_NAME == 'master' || env.TAG_NAME =~ /v.*/} }
       agent { label 'staging' }
       steps { script { sharedLib.build() } }
     }
     stage('Push') {
-      when { expression {  env.BRANCH_NAME == 'main' || env.TAG_NAME =~ /v.*/ } }
+      when { expression {  env.BRANCH_NAME == 'master' || env.TAG_NAME =~ /v.*/ } }
       agent { label 'staging' }
       steps { script { sharedLib.push() } }
     }
     stage('Deploy Staging') {
-      when { expression { env.BRANCH_NAME == 'main' } }
+      when { expression { env.BRANCH_NAME == 'master' } }
       agent { label 'staging' }
       steps { script { sharedLib.deploy(imageTag: env.DOCKER_TAG, environment: 'staging') } }
     }
