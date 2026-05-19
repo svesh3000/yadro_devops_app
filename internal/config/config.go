@@ -36,7 +36,7 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("invalid PORT: %w", err)
 	}
 
-	version := getEnv("VERSION", "1.0.0")
+	version := getEnv("VERSION", "1.0.1")
 	author := getEnv("AUTHOR", "m.sveshnikov1")
 
 	apiKey := os.Getenv("API_KEY")
