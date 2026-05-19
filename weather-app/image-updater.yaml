@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   commonUpdateSettings:
-    pullSecret: "pullsecret:argocd/docker-config"
+    pullSecret: "pullsecret:argocd/dockerhub-secret"
     updateStrategy: newest-build
   applicationRefs:
   - namePattern: "weather-app"
