@@ -4,20 +4,17 @@ metadata:
   name: weather-updater
   namespace: argocd
 spec:
-  interval: 2m
-  registries:
-  - name: Docker Hub
-    prefix: docker.io
-    api_url: https://registry-1.docker.io
-    credentials: pullsecret:argocd/dockerhub-secret
-  applications:
-  - name: weather-app
-    kind: Application
-    namespace: argocd
+  commonUpdateSettings:
+    pullSecret: "pullsecret:argocd/docker-config"
+    updateStrategy: newest-build
+  applicationRefs:
+  - namePattern: "weather-app"
     images:
-    - image: sveshnikov/app
-      alias: weather
-      updateStrategy: newest-build
-      helm:
-        imageName: image.repository
-        imageTag: image.tag
+    - alias: weather
+      imageName: sveshnikov/app
+      manifestTargets:
+        helm:
+          name: image.repository
+          tag: image.tag
+  writeBackConfig:
+    method: argocd
